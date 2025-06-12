@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schüler Kosten & Zahlungsstatus</title>
+    <!-- Tailwind CSS CDN für das Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter für eine moderne Typografie -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Inline-Stil, um die Inter-Schriftart sicherzustellen -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 lg:p-8">
+    <div id="root"></div>
+
+    <!-- React und ReactDOM CDNs -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel CDN für die JSX-Transformation im Browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // Import getAnalytics if you plan to use it and uncomment the initialization
+        // import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+
+        // IMPORTANT: Replace this with your actual Firebase project config from your Firebase Console!
+        // Go to Firebase Console -> Project overview -> Project settings (gear icon) -> Your apps -> Web app
+        // Copy the configuration object and paste it here.
+        const firebaseConfig = {
+
+  apiKey: "AIzaSyAyW1LaQHyzv-8gWC7w_ekx-DXNkZAtOag",
+
+  authDomain: "schuelerzahlliste.firebaseapp.com",
+
+  projectId: "schuelerzahlliste",
+
+  storageBucket: "schuelerzahlliste.firebasestorage.app",
+
+  messagingSenderId: "35570342676",
+
+  appId: "1:35570342676:web:fe7035f9480ebb967f0001",
+
+  measurementId: "G-T3SYWQF7FR"
+
+};
+
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        // const analytics = getAnalytics(app); // Uncomment and use if you need analytics
+
+        // Make Auth, Firestore, and appId globally available for the React component
+        window.firebaseAuth = getAuth(app);
+        window.firebaseDb = getFirestore(app);
+        window.firebaseAppId = firebaseConfig.appId; 
+    </script>
+
+    <script type="text/babel">
+        // Initial student data (same as before)
+        const initialStudentData = [
+            { id: 1, name: "Antonitsch Jakob", activities: ["nein", "ja", "nein", "nein", "5"] },
+            { id: 2, name: "Brunner Annalena", activities: ["nein", "nein", "nein", "nein", "5"] },
+            { id: 3, name: "Brunner Gabriel", activities: ["ja", "ja", "ja", "nein", "5"] },
+            { id: 4, name: "Dreier Adrian", activities: ["ja", "ja", "ja", "nein", "5"] },
+            { id: 5, name: "Dunkl Theo", activities: ["nein", "ja", "nein", "nein", "5"] },
+            { id: 6, name: "Goller Philipp", activities: ["ja", "ja", "ja", "nein", "5"] },
+            { id: 7, name: "Granig Mario", activities: ["nein", "ja", "nein", "nein", "5"] },
+            { id: 8, name: "Kecler Fabian", activities: ["ja", "ja", "ja", "nein", "5"] },
+            { id: 9, name: "Kogler Simon", activities: ["ja", "ja", "ja", "nein", "5"] },
+            { id: 10, name: "Kraner Jakob", activities: ["nein", "ja", "nein", "nein", "5"] },
+            { id: 11, name: "Meissnitzer Tobias", activities: ["nein", "nein", "nein", "nein", "5"] },
+            { id: 12, name: "Morina Tobias", activities: ["nein", "ja", "nein", "nein", "5"] },
+            { id: 13, "name": "Rebhan Iwen", "activities": ["ja", "ja", "ja", "nein", "5"] },
+            { id: 14, name: "Seebacher Alena", activities: ["nein", "nein", "nein", "nein", "0"] },
+            { id: 15, name: "Steiner Elias", activities: ["ja", "ja", "ja", "nein", "5"] },
+            { id: 16, name: "Stirling Elias", activities: ["nein", "nein", "ja", "nein", "5"] },
+            { id: 17, name: "Tautschnig Yannick", activities: ["nein", "ja", "nein", "nein", "5"] },
+            { id: 18, name: "Terkl Marco", activities: ["nein", "ja", "nein", "nein", "5"] },
+            { id: 19, name: "Walder Sandro", activities: ["nein", "ja", "nein", "nein", "5"] },
+            { id: 20, name: "Wirth Sebastian", activities: ["nein", "ja", "nein", "nein", "5"] },
+            { id: 21, name: "Zeber Marcel", activities: ["nein", "nein", "nein", "nein", "5"] },
+            { id: 22, name: "Zivkovic Ana", activities: ["nein", "ja", "nein", "nein", "5"] },
+        ];
+
+        // Prices for activities from the image
+        const prices = {
+            busticket1: 8.30,
+            bogenschießen: 21.80,
+            busticket2: 8.70,
+            eintritt: 0.00,
+            kinokarte: 5.00,
+        };
+
+        /**
+         * Calculates the total cost for a student based on their activities.
+         * @param {Array<string>} activities - A list of the student's activities (e.g., ["yes", "no", ...]).
+         * @returns {number} - The total cost for the student.
+         */
+        const calculateCost = (activities) => {
+            let totalCost = 0;
+
+            if (activities[0] && activities[0].toLowerCase() === "ja") {
+                totalCost += prices.busticket1;
+            }
+            if (activities[1] && activities[1].toLowerCase() === "ja") {
+                totalCost += prices.bogenschießen;
+            }
+            if (activities[2] && activities[2].toLowerCase() === "ja") {
+                totalCost += prices.busticket2;
+            }
+            if (activities[3] && activities[3].toLowerCase() === "ja") {
+                totalCost += prices.eintritt;
+            }
+            if (activities[4] && (activities[4].toLowerCase() === "ja" || parseFloat(activities[4]) === 5)) {
+                totalCost += prices.kinokarte;
+            } else if (activities[4] && parseFloat(activities[4]) === 0) {
+                totalCost += 0;
+            }
+
+            return totalCost;
+        };
+
+        /**
+         * Component for displaying a single student in the list.
+         * @param {object} props - The component's properties.
+         * @param {object} props.student - The student object with name, cost, and payment status.
+         * @param {function} props.onTogglePaid - Callback function when payment status is changed.
+         * @param {boolean} props.isEditable - Indicates if the checkbox should be editable.
+         */
+        const StudentItem = ({ student, onTogglePaid, isEditable }) => {
+            return (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white p-4 mb-3 rounded-xl shadow-md transition duration-300 ease-in-out hover:shadow-lg">
+                    <div className="flex-grow">
+                        <h3 className="font-semibold text-lg text-gray-800">{student.name}</h3>
+                        <p className="text-gray-600 text-sm">Gesamtkosten: <span className="font-bold text-blue-600">{student.cost.toFixed(2)} €</span></p>
+                    </div>
+                    <div className="flex items-center mt-3 sm:mt-0">
+                        <label htmlFor={`paid-${student.id}`} className="mr-3 text-gray-700 select-none">Bezahlt:</label>
+                        <input
+                            type="checkbox"
+                            id={`paid-${student.id}`}
+                            checked={student.hasPaid}
+                            onChange={() => isEditable && onTogglePaid(student.id)} // Only allow change if editable
+                            disabled={!isEditable} // Disable if not editable
+                            className={`h-6 w-6 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-md ${isEditable ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
+                        />
+                    </div>
+                </div>
+            );
+        };
+
+        /**
+         * Main application component that manages and renders the student list.
+         */
+        function App() {
+            const [students, setStudents] = React.useState([]);
+            const [loading, setLoading] = React.useState(true);
+            const [user, setUser] = React.useState(null); // Firebase authenticated user
+            const [adminUid, setAdminUid] = React.useState(null); // UID of the admin user
+            const [email, setEmail] = React.useState('');
+            const [password, setPassword] = React.useState('');
+            const [authError, setAuthError] = React.useState('');
+            
+            const auth = window.firebaseAuth;
+            const db = window.firebaseDb;
+            const appId = window.firebaseAppId; // Get the appId from Firebase config
+
+            // 1. Firebase Authentication State Listener
+            React.useEffect(() => {
+                if (!auth) {
+                    setAuthError("Firebase Auth ist nicht initialisiert. Bitte überprüfen Sie Ihre Firebase-Konfiguration.");
+                    setLoading(false);
+                    return;
+                }
+
+                const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
+                    setUser(firebaseUser);
+                    // Loading will stop after admin UID and data are fetched
+                });
+
+                return () => unsubscribe();
+            }, [auth]);
+
+            // 2. Load Admin UID and Student Data from Firestore
+            React.useEffect(() => {
+                if (!db || !appId) {
+                    // Only log an error if app ID is truly missing after Firebase init
+                    if (!appId) console.error("App ID ist nicht verfügbar. Bitte stellen Sie sicher, dass firebaseConfig.appId gesetzt ist.");
+                    setLoading(false); // Set loading to false as data cannot be fetched without db/appId
+                    return;
+                }
+
+                // Reference to the admin configuration document
+                const adminConfigDocRef = db.collection('artifacts').doc(appId).collection('public').doc('adminConfig');
+
+                const unsubscribeAdminConfig = adminConfigDocRef.onSnapshot(async (docSnap) => {
+                    if (docSnap.exists() && docSnap.data().adminUid) {
+                        setAdminUid(docSnap.data().adminUid);
+                    } else if (user && !adminUid) {
+                        // If no adminUid is set yet and a user is logged in, make them the admin
+                        console.log("Kein Administrator gefunden. Setze aktuellen Benutzer als Administrator:", user.uid);
+                        try {
+                            await setDoc(adminConfigDocRef, { adminUid: user.uid });
+                            setAdminUid(user.uid);
+                        } catch (e) {
+                            console.error("Fehler beim Setzen der Administrator-UID:", e);
+                            setAuthError("Konnte Administrator-Rechte nicht zuweisen. Möglicherweise fehlen Schreibrechte.");
+                        }
+                    }
+                }, (error) => {
+                    console.error("Fehler beim Abrufen der Administrator-Konfiguration:", error);
+                    setAuthError("Fehler beim Laden der Administrator-Informationen.");
+                    setLoading(false); // Stop loading on error
+                });
+
+                // Reference to the public student list document
+                const studentListDocRef = db.collection('artifacts').doc(appId).collection('public').collection('data').doc('myList');
+                const unsubscribeStudentList = studentListDocRef.onSnapshot((docSnap) => {
+                    if (docSnap.exists() && docSnap.data().students) {
+                        // Ensure hasPaid is boolean
+                        const fetchedStudents = docSnap.data().students.map(student => ({
+                            ...student,
+                            hasPaid: typeof student.hasPaid === 'boolean' ? student.hasPaid : false
+                        }));
+                        setStudents(fetchedStudents);
+                    } else {
+                        // If document doesn't exist, try to initialize it.
+                        // Only perform actual write if an admin is recognized.
+                        const calculatedInitialData = initialStudentData.map(student => ({
+                            ...student,
+                            cost: calculateCost(student.activities),
+                            hasPaid: false,
+                        }));
+                        setStudents(calculatedInitialData); // Always show initial data
+                        if (user && user.uid === adminUid) { // Only admin can initialize/write
+                             setDoc(studentListDocRef, { students: calculatedInitialData })
+                                .catch(e => console.error("Fehler beim Initialisieren der Schülerdaten:", e));
+                        }
+                    }
+                    setLoading(false); // Data fetching is complete (either loaded or initialized)
+                }, (error) => {
+                    console.error("Fehler beim Abrufen der Schülerliste:", error);
+                    setAuthError("Fehler beim Laden der Schülerdaten aus der Datenbank.");
+                    setLoading(false);
+                });
+
+                // Cleanup listeners
+                return () => {
+                    unsubscribeAdminConfig();
+                    unsubscribeStudentList();
+                };
+            }, [db, user, adminUid, appId]); // Depend on db, user, adminUid, and appId
+
+            // 3. Save Student Data to Firestore (debounced)
+            React.useEffect(() => {
+                // Only save if DB is available, user is authenticated, the current user is the admin, and not in initial loading phase
+                if (!db || !user || user.uid !== adminUid || loading) {
+                    return;
+                }
+
+                const saveStudentData = async () => {
+                    const studentListDocRef = db.collection('artifacts').doc(appId).collection('public').collection('data').doc('myList');
+                    try {
+                        await setDoc(studentListDocRef, { students: students });
+                        console.log("Schülerdaten in Firestore gespeichert.");
+                    } catch (error) {
+                        console.error("Fehler beim Speichern der Schülerdaten in Firestore:", error);
+                        setAuthError("Fehler beim Speichern der Daten. Prüfen Sie Ihre Internetverbindung oder Firebase-Regeln.");
+                    }
+                };
+
+                const timeoutId = setTimeout(saveStudentData, 500); // Debounce saves
+                return () => clearTimeout(timeoutId); // Cleanup timeout
+            }, [students, db, user, adminUid, loading, appId]);
+
+
+            /**
+             * Handles user registration.
+             * @param {string} email - The user's email.
+             * @param {string} password - The user's password.
+             */
+            const handleRegister = async () => {
+                setAuthError(''); // Clear previous errors
+                if (!email || !password) {
+                    setAuthError("E-Mail und Passwort dürfen nicht leer sein.");
+                    return;
+                }
+                try {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    alert("Registrierung erfolgreich! Sie wurden angemeldet. Wenn Sie der erste Registrierte sind, sind Sie jetzt der Administrator.");
+                    setEmail('');
+                    setPassword('');
+                } catch (error) {
+                    setAuthError(error.message);
+                    console.error("Registrierungsfehler:", error);
+                }
+            };
+
+            /**
+             * Handles user login.
+             * @param {string} email - The user's email.
+             * @param {string} password - The user's password.
+             */
+            const handleLogin = async () => {
+                setAuthError(''); // Clear previous errors
+                if (!email || !password) {
+                    setAuthError("E-Mail und Passwort dürfen nicht leer sein.");
+                    return;
+                }
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    alert("Anmeldung erfolgreich!");
+                    setEmail('');
+                    setPassword('');
+                } catch (error) {
+                    setAuthError(error.message);
+                    console.error("Anmeldefehler:", error);
+                }
+            };
+
+            /**
+             * Handles user logout.
+             */
+            const handleLogout = async () => {
+                setAuthError(''); // Clear previous errors
+                try {
+                    await signOut(auth);
+                    setAdminUid(null); // Reset admin status on logout
+                    alert("Erfolgreich abgemeldet.");
+                } catch (error) {
+                    console.error("Abmeldefehler:", error);
+                    setAuthError("Fehler beim Abmelden.");
+                }
+            };
+
+            /**
+             * Toggles the payment status of a student.
+             * @param {number} studentId - The ID of the student whose status is to be changed.
+             */
+            const togglePaidStatus = (studentId) => {
+                setStudents(prevStudents => {
+                    const updatedStudents = prevStudents.map(student =>
+                        student.id === studentId
+                            ? { ...student, hasPaid: !student.hasPaid }
+                            : student
+                    );
+                    console.log("Zahlungsstatus geändert. Neue Schülerliste:", updatedStudents);
+                    return updatedStudents;
+                });
+            };
+
+            const isCurrentUserAdmin = user && adminUid && user.uid === adminUid;
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 lg:p-8 font-inter">
+                        <p className="text-xl text-blue-700">Lade Daten...</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 lg:p-8 font-inter">
+                    <div className="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-3xl shadow-xl border border-blue-200">
+                        <h1 className="text-4xl font-bold text-center text-blue-800 mb-8 pb-4 border-b-2 border-blue-200">
+                            Schüler Kosten &amp; Zahlungsstatus
+                        </h1>
+
+                        <p className="text-gray-700 mb-6 text-center">
+                            Diese Schülerliste wird in einer sicheren Cloud-Datenbank gespeichert. Jeder kann sie anzeigen. Nur der registrierte Administrator kann Änderungen vornehmen.
+                            <br/>
+                            <span className="text-sm text-gray-500 mt-2 block">
+                                (Eintrittspreis ist 0,00 € angenommen.)
+                            </span>
+                        </p>
+
+                        {/* Authentication Controls */}
+                        <div className="flex flex-col items-center justify-center mb-6 p-4 bg-blue-50 rounded-xl shadow-inner">
+                            {user ? (
+                                <div className="text-center w-full max-w-sm">
+                                    <p className="text-lg text-blue-800 font-semibold mb-2">
+                                        Angemeldet als: <span className="font-mono break-all">{user.email || user.uid}</span>
+                                    </p>
+                                    {isCurrentUserAdmin && (
+                                        <p className="text-green-700 font-semibold mb-4">Sie sind der Administrator und können bearbeiten.</p>
+                                    )}
+                                    {!isCurrentUserAdmin && (
+                                        <p className="text-orange-700 font-semibold mb-4">Sie sind angemeldet, aber nicht der Administrator. Sie können nur anzeigen.</p>
+                                    )}
+                                    <button
+                                        onClick={handleLogout}
+                                        className="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400"
+                                    >
+                                        Abmelden
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="w-full max-w-sm">
+                                    <h2 className="text-xl font-semibold text-blue-700 mb-4 text-center">Anmelden / Registrieren</h2>
+                                    <div className="flex flex-col gap-3 mb-4">
+                                        <input
+                                            type="email"
+                                            placeholder="E-Mail"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        />
+                                        <input
+                                            type="password"
+                                            placeholder="Passwort"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <button
+                                            onClick={handleLogin}
+                                            className="flex-grow px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        >
+                                            Anmelden
+                                        </button>
+                                        <button
+                                            onClick={handleRegister}
+                                            className="flex-grow px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400"
+                                        >
+                                            Registrieren
+                                        </button>
+                                    </div>
+                                    {authError && (
+                                        <p className="text-red-600 text-sm mt-2 text-center">{authError}</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-4">
+                            {students.map(student => (
+                                <StudentItem
+                                    key={student.id}
+                                    student={student}
+                                    onTogglePaid={togglePaidStatus}
+                                    isEditable={isCurrentUserAdmin} // Only admin can edit
+                                />
+                            ))}
+                        </div>
+
+                        <div className="mt-10 pt-6 border-t-2 border-blue-200 text-center text-gray-600 text-sm">
+                            <p>&copy; 2024 Schülerliste. Alle Rechte vorbehalten.</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the React app into the 'root' div
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+    </script>
+</body>
+</html>
