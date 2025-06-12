@@ -27,42 +27,97 @@
     <!-- Firebase SDKs -->
     <script type="module">
         // Import the functions you need from the SDKs you need
+        // Using specific versions from gstatic.com for robust standalone HTML
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // Import getAnalytics if you plan to use it and uncomment the initialization
+        // Import collection, doc, setDoc, onSnapshot for Firestore modular syntax
+        import { getFirestore, collection, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // If you plan to use analytics, uncomment the following line and its initialization below
         // import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        // IMPORTANT: Replace this with your actual Firebase project config from your Firebase Console!
-        // Go to Firebase Console -> Project overview -> Project settings (gear icon) -> Your apps -> Web app
-        // Copy the configuration object and paste it here.
+        // WICHTIG: ÜBERPRÜFEN SIE DIESE FIREBASE-KONFIGURATION!
+        // Dies ist Ihre einzigartige Konfiguration aus der Firebase Console.
+        // Gehen Sie zu Firebase Console -> Projektübersicht -> Projekteinstellungen (Zahnradsymbol) -> Ihre Apps -> Web-App
+        // Kopieren Sie das Konfigurationsobjekt und fügen Sie es hier ein.
+        // Die hier verwendeten Werte stammen aus Ihrer vorherigen Angabe. Bitte überprüfen Sie deren Gültigkeit.
         const firebaseConfig = {
+            apiKey: "AIzaSyAyW1LaQHyzv-8gWC7w_ekx-DXNkZAtOag",
+            authDomain: "schuelerzahlliste.firebaseapp.com",
+            projectId: "schuelerzahlliste",
+            storageBucket: "schuelerzahlliste.firebasestorage.app",
+            messagingSenderId: "35570342676",
+            appId: "1:35570342676:web:fe7035f9480ebb967f0001",
+            measurementId: "G-T3SYWQF7FR" // Nur wenn Sie Analytics verwenden
+        };
 
-  apiKey: "AIzaSyAyW1LaQHyzv-8gWC7w_ekx-DXNkZAtOag",
+        let app;
+        let authInstance;
+        let dbInstance;
 
-  authDomain: "schuelerzahlliste.firebaseapp.com",
+        try {
+            app = initializeApp(firebaseConfig);
+            console.log("Firebase App erfolgreich initialisiert.");
 
-  projectId: "schuelerzahlliste",
+            authInstance = getAuth(app);
+            dbInstance = getFirestore(app);
+            // Wenn Sie Analytics verwenden, entfernen Sie die Kommentarzeichen für die folgende Zeile:
+            // const analytics = getAnalytics(app);
+            // console.log("Firebase Analytics initialisiert.");
 
-  storageBucket: "schuelerzahlliste.firebasestorage.app",
+            // Weisen Sie die initialisierten Instanzen den globalen Fenstereigenschaften zu
+            window.firebaseAuth = authInstance;
+            window.firebaseDb = dbInstance;
+            window.firebaseAppId = firebaseConfig.appId;
+            // Make Firestore modular functions globally available
+            window.firebaseCollection = collection;
+            window.firebaseDoc = doc;
+            window.firebaseSetDoc = setDoc; // Ensure setDoc is also global
+            window.firebaseOnSnapshot = onSnapshot; // Make onSnapshot global
 
-  messagingSenderId: "35570342676",
-
-  appId: "1:35570342676:web:fe7035f9480ebb967f0001",
-
-  measurementId: "G-T3SYWQF7FR"
-
-};
+            // Make Auth functions globally available
+            window.firebaseCreateUserWithEmailAndPassword = createUserWithEmailAndPassword;
+            window.firebaseSignInWithEmailAndPassword = signInWithEmailAndPassword;
+            window.firebaseSignOut = signOut;
+            window.firebaseOnAuthStateChanged = onAuthStateChanged;
 
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        // const analytics = getAnalytics(app); // Uncomment and use if you need analytics
+            console.log("Globale Firebase-Instanzen gesetzt:");
+            console.log("  auth (global):", !!window.firebaseAuth);
+            console.log("  db (global):", !!window.firebaseDb); // Sollte jetzt true sein
+            console.log("  appId (global):", window.firebaseAppId);
+            console.log("  collection (global):", !!window.firebaseCollection);
+            console.log("  doc (global):", !!window.firebaseDoc);
+            console.log("  setDoc (global):", !!window.firebaseSetDoc); // New log
+            console.log("  onSnapshot (global):", !!window.firebaseOnSnapshot); // New log
+            console.log("  createUserWithEmailAndPassword (global):", !!window.firebaseCreateUserWithEmailAndPassword);
+            console.log("  signInWithEmailAndPassword (global):", !!window.firebaseSignInWithEmailAndPassword);
+            console.log("  signOut (global):", !!window.firebaseSignOut);
+            console.log("  onAuthStateChanged (global):", !!window.firebaseOnAuthStateChanged);
 
-        // Make Auth, Firestore, and appId globally available for the React component
-        window.firebaseAuth = getAuth(app);
-        window.firebaseDb = getFirestore(app);
-        window.firebaseAppId = firebaseConfig.appId; 
+
+            if (!window.firebaseAuth) {
+                console.error("Fehler: window.firebaseAuth ist nicht initialisiert. Überprüfen Sie Ihre Firebase-Konfiguration und ob der Authentifizierungsdienst in Firebase aktiviert ist.");
+            }
+            if (!window.firebaseDb) {
+                console.error("Fehler: window.firebaseDb ist nicht initialisiert. Überprüfen Sie Ihre Firebase-Konfiguration und ob der Firestore-Dienst in Firebase aktiviert ist.");
+            }
+
+        } catch (error) {
+            console.error("SCHWERWIEGENDER FEHLER BEIM INITIALISIEREN DER FIREBASE APP:", error);
+            console.error("Mögliche Ursache: Falsche 'firebaseConfig' oder Firebase-Dienste nicht aktiviert.");
+            // Setze globale Instanzen auf null im Fehlerfall, um spätere Fehler zu vermeiden
+            window.firebaseAuth = null;
+            window.firebaseDb = null;
+            window.firebaseAppId = null;
+            window.firebaseCollection = null;
+            window.firebaseDoc = null;
+            window.firebaseSetDoc = null;
+            window.firebaseOnSnapshot = null;
+            window.firebaseCreateUserWithEmailAndPassword = null;
+            window.firebaseSignInWithEmailAndPassword = null;
+            window.firebaseSignOut = null;
+            window.firebaseOnAuthStateChanged = null;
+        }
     </script>
 
     <script type="text/babel">
@@ -171,61 +226,101 @@
             const [password, setPassword] = React.useState('');
             const [authError, setAuthError] = React.useState('');
             
+            // Get global Firebase instances and functions
             const auth = window.firebaseAuth;
             const db = window.firebaseDb;
-            const appId = window.firebaseAppId; // Get the appId from Firebase config
+            const appId = window.firebaseAppId; 
+            const collection = window.firebaseCollection;
+            const doc = window.firebaseDoc;
+            const setDoc = window.firebaseSetDoc; // Get setDoc globally
+            const onSnapshot = window.firebaseOnSnapshot; // Get onSnapshot globally
+            const createUserWithEmailAndPassword = window.firebaseCreateUserWithEmailAndPassword;
+            const signInWithEmailAndPassword = window.firebaseSignInWithEmailAndPassword;
+            const signOut = window.firebaseSignOut;
+            const onAuthStateChanged = window.firebaseOnAuthStateChanged;
+
+
+            // Log global Firebase instances at App component start
+            console.log("App Component Start: auth:", !!auth, "db:", !!db, "appId:", appId, "loading:", loading);
+            console.log("Auth Functions Available: create:", !!createUserWithEmailAndPassword, "signIn:", !!signInWithEmailAndPassword, "signOut:", !!signOut, "onAuth:", !!onAuthStateChanged);
+            console.log("Firestore Functions Available: collection:", !!collection, "doc:", !!doc, "setDoc:", !!setDoc, "onSnapshot:", !!onSnapshot);
+
 
             // 1. Firebase Authentication State Listener
             React.useEffect(() => {
-                if (!auth) {
-                    setAuthError("Firebase Auth ist nicht initialisiert. Bitte überprüfen Sie Ihre Firebase-Konfiguration.");
+                console.log("useEffect [auth] triggered. Current auth instance:", !!auth);
+                if (!auth || !onAuthStateChanged) { // Check for onAuthStateChanged here too
+                    setAuthError("Firebase Auth ist nicht initialisiert. Bitte überprüfen Sie Ihre Firebase-Konfiguration im HTML-Code.");
                     setLoading(false);
                     return;
                 }
 
-                const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
+                const unsubscribe = onAuthStateChanged(auth, firebaseUser => { // Use onAuthStateChanged directly
+                    console.log("onAuthStateChanged: User changed to:", firebaseUser ? firebaseUser.uid : "null");
                     setUser(firebaseUser);
-                    // Loading will stop after admin UID and data are fetched
+                    // Loading will stop after admin UID and data are fetched in the next useEffect
                 });
 
-                return () => unsubscribe();
-            }, [auth]);
+                return () => {
+                    console.log("Unsubscribing from auth state changes.");
+                    unsubscribe();
+                };
+            }, [auth, onAuthStateChanged]); // Add onAuthStateChanged to dependencies
 
             // 2. Load Admin UID and Student Data from Firestore
             React.useEffect(() => {
-                if (!db || !appId) {
-                    // Only log an error if app ID is truly missing after Firebase init
-                    if (!appId) console.error("App ID ist nicht verfügbar. Bitte stellen Sie sicher, dass firebaseConfig.appId gesetzt ist.");
-                    setLoading(false); // Set loading to false as data cannot be fetched without db/appId
+                console.log("useEffect [db, user, adminUid, appId] triggered.");
+                console.log("Current state: db:", !!db, "user:", user ? user.uid : "null", "adminUid:", adminUid, "appId:", appId);
+
+                // Critical check: Ensure db and appId are available before attempting Firestore operations
+                if (!db || !appId || !collection || !doc || !onSnapshot || !setDoc) { // Add setDoc to check
+                    let errorMessage = "Fehler: Firebase Firestore ist nicht verfügbar.";
+                    if (!db) errorMessage += " Das 'db'-Objekt ist null oder undefined.";
+                    if (!appId) errorMessage += " Die 'appId' ist null oder undefined.";
+                    if (!collection || !doc) errorMessage += " Firestore-Funktionen 'collection'/'doc' sind nicht verfügbar.";
+                    if (!onSnapshot) errorMessage += " Firestore-Funktion 'onSnapshot' ist nicht verfügbar.";
+                    if (!setDoc) errorMessage += " Firestore-Funktion 'setDoc' ist nicht verfügbar.";
+
+                    console.error(errorMessage);
+                    setAuthError(errorMessage + " Bitte überprüfen Sie Ihre Firebase-Konfiguration und Importe.");
+                    setLoading(false); 
                     return;
                 }
 
-                // Reference to the admin configuration document
-                const adminConfigDocRef = db.collection('artifacts').doc(appId).collection('public').doc('adminConfig');
-
-                const unsubscribeAdminConfig = adminConfigDocRef.onSnapshot(async (docSnap) => {
+                // --- Admin Config Listener ---
+                // MODULAR SYNTAX: collection() and doc() functions
+                const adminConfigDocRef = doc(collection(db, 'artifacts', appId, 'public'), 'adminConfig');
+                const unsubscribeAdminConfig = onSnapshot(adminConfigDocRef, async (docSnap) => { // Use onSnapshot directly
+                    console.log("AdminConfig snapshot received. exists:", docSnap.exists(), "data:", docSnap.data());
                     if (docSnap.exists() && docSnap.data().adminUid) {
                         setAdminUid(docSnap.data().adminUid);
-                    } else if (user && !adminUid) {
-                        // If no adminUid is set yet and a user is logged in, make them the admin
-                        console.log("Kein Administrator gefunden. Setze aktuellen Benutzer als Administrator:", user.uid);
+                        console.log("Admin UID gesetzt:", docSnap.data().adminUid);
+                    } else if (user && !adminUid) { // Only attempt to set admin if a user is logged in AND no admin is currently set
+                        console.log("AdminConfig existiert nicht oder Admin UID fehlt. Versuche, aktuellen Benutzer (" + user.uid + ") als Admin zu setzen.");
                         try {
                             await setDoc(adminConfigDocRef, { adminUid: user.uid });
                             setAdminUid(user.uid);
+                            console.log("Aktueller Benutzer (" + user.uid + ") als Admin UID in Firestore geschrieben.");
                         } catch (e) {
-                            console.error("Fehler beim Setzen der Administrator-UID:", e);
-                            setAuthError("Konnte Administrator-Rechte nicht zuweisen. Möglicherweise fehlen Schreibrechte.");
+                            console.error("Fehler beim Setzen der Administrator-UID in Firestore:", e);
+                            setAuthError("Konnte Administrator-Rechte nicht zuweisen. Möglicherweise fehlen Schreibrechte oder Regeln.");
                         }
+                    } else {
+                        console.log("AdminConfig leer oder kein angemeldeter Benutzer, um Admin zu setzen.");
                     }
+                    // Do NOT set loading false here, as student list fetch is still pending.
                 }, (error) => {
                     console.error("Fehler beim Abrufen der Administrator-Konfiguration:", error);
                     setAuthError("Fehler beim Laden der Administrator-Informationen.");
-                    setLoading(false); // Stop loading on error
+                    // Still don't set loading false here, as student list fetch might succeed independently.
                 });
 
-                // Reference to the public student list document
-                const studentListDocRef = db.collection('artifacts').doc(appId).collection('public').collection('data').doc('myList');
-                const unsubscribeStudentList = studentListDocRef.onSnapshot((docSnap) => {
+                // --- Student List Listener ---
+                // MODULAR SYNTAX: collection() and doc() functions
+                // Changed path to 'studentList' document directly under 'public' collection
+                const studentListDocRef = doc(collection(db, 'artifacts', appId, 'public'), 'studentList');
+                const unsubscribeStudentList = onSnapshot(studentListDocRef, (docSnap) => { // Use onSnapshot directly
+                    console.log("StudentList snapshot received. exists:", docSnap.exists(), "data:", docSnap.data());
                     if (docSnap.exists() && docSnap.data().students) {
                         // Ensure hasPaid is boolean
                         const fetchedStudents = docSnap.data().students.map(student => ({
@@ -233,43 +328,68 @@
                             hasPaid: typeof student.hasPaid === 'boolean' ? student.hasPaid : false
                         }));
                         setStudents(fetchedStudents);
+                        console.log("Schülerdaten geladen:", fetchedStudents.length, "Einträge.");
                     } else {
-                        // If document doesn't exist, try to initialize it.
-                        // Only perform actual write if an admin is recognized.
+                        console.log("Schülerdokument existiert nicht oder ist leer. Initialisiere lokale Daten.");
                         const calculatedInitialData = initialStudentData.map(student => ({
                             ...student,
                             cost: calculateCost(student.activities),
                             hasPaid: false,
                         }));
                         setStudents(calculatedInitialData); // Always show initial data
-                        if (user && user.uid === adminUid) { // Only admin can initialize/write
-                             setDoc(studentListDocRef, { students: calculatedInitialData })
-                                .catch(e => console.error("Fehler beim Initialisieren der Schülerdaten:", e));
+                        console.log("Initialdaten gesetzt für UI:", calculatedInitialData.length, "Einträge.");
+
+                        // Only attempt to write initial data if we have an admin recognized,
+                        // otherwise, it will just show the empty list (or initial data locally)
+                        // until an admin logs in and triggers a write.
+                        // This prevents unauthorized users from creating the document.
+                        if (user && user.uid === adminUid) { // Check if user is logged in AND matches the established admin UID
+                            setDoc(studentListDocRef, { students: calculatedInitialData })
+                                .then(() => console.log("Initialdaten in Firestore geschrieben."))
+                                .catch(e => console.error("Fehler beim Initialisieren der Schülerdaten in Firestore:", e));
+                        } else if (user) { // Log if user is logged in but not admin
+                            console.log("Benutzer (" + user.uid + ") ist angemeldet, aber nicht der Admin (" + adminUid + "). Initialdaten werden nicht in Firestore geschrieben.");
+                        } else { // Log if no user is logged in at all
+                            console.log("Kein Benutzer angemeldet. Initialdaten werden nicht in Firestore geschrieben.");
                         }
                     }
-                    setLoading(false); // Data fetching is complete (either loaded or initialized)
+                    setLoading(false); // Data fetching is complete (either loaded or initialized, or error occurred)
+                    console.log("Loading state set to false.");
                 }, (error) => {
                     console.error("Fehler beim Abrufen der Schülerliste:", error);
                     setAuthError("Fehler beim Laden der Schülerdaten aus der Datenbank.");
-                    setLoading(false);
+                    setLoading(false); // Stop loading on error
+                    console.log("Loading state set to false due to error.");
                 });
 
                 // Cleanup listeners
                 return () => {
+                    console.log("Unsubscribing from Firestore snapshots.");
                     unsubscribeAdminConfig();
                     unsubscribeStudentList();
                 };
-            }, [db, user, adminUid, appId]); // Depend on db, user, adminUid, and appId
+            }, [db, user, adminUid, appId, collection, doc, onSnapshot, setDoc]); // Added setDoc to dependencies
 
             // 3. Save Student Data to Firestore (debounced)
             React.useEffect(() => {
+                console.log("useEffect [students, db, user, adminUid, loading, appId] triggered for saving.");
+                console.log("Current state for saving: db:", !!db, "user:", !!user, "adminUid:", adminUid, "loading:", loading);
+
                 // Only save if DB is available, user is authenticated, the current user is the admin, and not in initial loading phase
-                if (!db || !user || user.uid !== adminUid || loading) {
+                // Also, ensure students array is not empty before saving (to prevent saving an empty array on first render)
+                if (!db || !user || user.uid !== adminUid || loading || students.length === 0 || !collection || !doc || !setDoc) { // Add checks for collection, doc, setDoc
+                    if (students.length === 0 && !loading) {
+                        console.log("Warnung: Studentenliste ist leer und nicht mehr am Laden. Speichern übersprungen.");
+                    } else if (!setDoc) {
+                        console.error("Fehler: 'setDoc' Funktion ist nicht verfügbar (beim Speichern).");
+                    }
                     return;
                 }
 
                 const saveStudentData = async () => {
-                    const studentListDocRef = db.collection('artifacts').doc(appId).collection('public').collection('data').doc('myList');
+                    console.log("Versuche Schülerdaten in Firestore zu speichern...");
+                    // MODULAR SYNTAX: collection() and doc() functions
+                    const studentListDocRef = doc(collection(db, 'artifacts', appId, 'public'), 'studentList');
                     try {
                         await setDoc(studentListDocRef, { students: students });
                         console.log("Schülerdaten in Firestore gespeichert.");
@@ -281,7 +401,7 @@
 
                 const timeoutId = setTimeout(saveStudentData, 500); // Debounce saves
                 return () => clearTimeout(timeoutId); // Cleanup timeout
-            }, [students, db, user, adminUid, loading, appId]);
+            }, [students, db, user, adminUid, loading, appId, collection, doc, setDoc]); // Add collection, doc, setDoc to dependencies
 
 
             /**
@@ -295,9 +415,27 @@
                     setAuthError("E-Mail und Passwort dürfen nicht leer sein.");
                     return;
                 }
+                if (!createUserWithEmailAndPassword) {
+                    setAuthError("Registrierungsfunktion nicht verfügbar. App ist nicht korrekt initialisiert.");
+                    return;
+                }
                 try {
+                    console.log("Versuche, Benutzer zu registrieren...");
                     await createUserWithEmailAndPassword(auth, email, password);
-                    alert("Registrierung erfolgreich! Sie wurden angemeldet. Wenn Sie der erste Registrierte sind, sind Sie jetzt der Administrator.");
+                    // alert("Registrierung erfolgreich! Sie wurden angemeldet. Wenn Sie der erste Registrierte sind, sind Sie jetzt der Administrator.");
+                    // Custom message box instead of alert()
+                    const messageBox = document.createElement('div');
+                    messageBox.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
+                    messageBox.innerHTML = `
+                        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+                            <p class="text-xl font-semibold mb-4">Registrierung erfolgreich!</p>
+                            <p class="mb-4">Sie wurden angemeldet. Wenn Sie der erste Registrierte sind, sind Sie jetzt der Administrator.</p>
+                            <button id="close-message-box" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
+                        </div>
+                    `;
+                    document.body.appendChild(messageBox);
+                    document.getElementById('close-message-box').onclick = () => messageBox.remove();
+
                     setEmail('');
                     setPassword('');
                 } catch (error) {
@@ -317,9 +455,26 @@
                     setAuthError("E-Mail und Passwort dürfen nicht leer sein.");
                     return;
                 }
+                if (!signInWithEmailAndPassword) {
+                    setAuthError("Anmeldefunktion nicht verfügbar. App ist nicht korrekt initialisiert.");
+                    return;
+                }
                 try {
+                    console.log("Versuche, Benutzer anzumelden...");
                     await signInWithEmailAndPassword(auth, email, password);
-                    alert("Anmeldung erfolgreich!");
+                    // alert("Anmeldung erfolgreich!");
+                    // Custom message box instead of alert()
+                    const messageBox = document.createElement('div');
+                    messageBox.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
+                    messageBox.innerHTML = `
+                        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+                            <p class="text-xl font-semibold mb-4">Anmeldung erfolgreich!</p>
+                            <button id="close-message-box" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
+                        </div>
+                    `;
+                    document.body.appendChild(messageBox);
+                    document.getElementById('close-message-box').onclick = () => messageBox.remove();
+
                     setEmail('');
                     setPassword('');
                 } catch (error) {
@@ -333,10 +488,26 @@
              */
             const handleLogout = async () => {
                 setAuthError(''); // Clear previous errors
+                if (!signOut) {
+                    setAuthError("Abmeldefunktion nicht verfügbar. App ist nicht korrekt initialisiert.");
+                    return;
+                }
                 try {
+                    console.log("Versuche, Benutzer abzumelden...");
                     await signOut(auth);
                     setAdminUid(null); // Reset admin status on logout
-                    alert("Erfolgreich abgemeldet.");
+                    // alert("Erfolgreich abgemeldet.");
+                    // Custom message box instead of alert()
+                    const messageBox = document.createElement('div');
+                    messageBox.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
+                    messageBox.innerHTML = `
+                        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+                            <p class="text-xl font-semibold mb-4">Erfolgreich abgemeldet.</p>
+                            <button id="close-message-box" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
+                        </div>
+                    `;
+                    document.body.appendChild(messageBox);
+                    document.getElementById('close-message-box').onclick = () => messageBox.remove();
                 } catch (error) {
                     console.error("Abmeldefehler:", error);
                     setAuthError("Fehler beim Abmelden.");
