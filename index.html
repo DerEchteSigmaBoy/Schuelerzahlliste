@@ -313,8 +313,8 @@
                     // Do NOT set loading false here, as student list fetch is still pending.
                 }, (error) => {
                     console.error("Fehler beim Abrufen der Administrator-Konfiguration (onSnapshot):", error);
-                    setAuthError("Fehler beim Laden der Administrator-Informationen: " + error.message); // Added error.message
-                    // Still don't set loading false here, as student list fetch might succeed independently.
+                    // Explicitly guide user to check rules
+                    setAuthError("Fehler beim Laden der Administrator-Informationen: " + error.message + ". Bitte stellen Sie sicher, dass in Ihren Firestore-Regeln für `/artifacts/{appId}/public/adminConfig` das Lesen durch 'allow read: if true;' erlaubt ist.");
                 });
 
                 // --- Student List Listener ---
@@ -359,7 +359,8 @@
                     console.log("Loading state set to false.");
                 }, (error) => {
                     console.error("Fehler beim Abrufen der Schülerliste:", error);
-                    setAuthError("Fehler beim Laden der Schülerdaten aus der Datenbank: " + error.message); // Added error.message
+                    // Explicitly guide user to check rules
+                    setAuthError("Fehler beim Laden der Schülerdaten: " + error.message + ". Bitte stellen Sie sicher, dass in Ihren Firestore-Regeln für `/artifacts/{appId}/public/studentList` das Lesen durch 'allow read: if true;' erlaubt ist.");
                     setLoading(false); // Stop loading on error
                     console.log("Loading state set to false due to error.");
                 });
@@ -547,10 +548,10 @@
             if (authError && !loading) {
                 return (
                     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4 sm:p-6 lg:p-8 font-inter">
-                        <div className="bg-white p-8 rounded-3xl shadow-xl border border-red-300 text-center max-w-lg">
-                            <p className="text-2xl font-bold text-red-700 mb-4">Fehler bei der App-Initialisierung!</p>
-                            <p className="text-lg text-red-600">{authError}</p>
-                            <p className="text-sm text-gray-500 mt-4">Bitte überprüfen Sie Ihre Firebase-Konfiguration, Internetverbindung und Firestore-Sicherheitsregeln.</p>
+                        <div class="bg-white p-8 rounded-3xl shadow-xl border border-red-300 text-center max-w-lg">
+                            <p class="text-2xl font-bold text-red-700 mb-4">Fehler bei der App-Initialisierung!</p>
+                            <p class="text-lg text-red-600">{authError}</p>
+                            <p class="text-sm text-gray-500 mt-4">Bitte überprüfen Sie Ihre Firebase-Konfiguration, Internetverbindung und Firestore-Sicherheitsregeln.</p>
                         </div>
                     </div>
                 );
@@ -558,81 +559,81 @@
 
 
             return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 lg:p-8 font-inter">
-                    <div className="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-3xl shadow-xl border border-blue-200">
-                        <h1 className="text-4xl font-bold text-center text-blue-800 mb-8 pb-4 border-b-2 border-blue-200">
+                <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 lg:p-8 font-inter">
+                    <div class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-3xl shadow-xl border border-blue-200">
+                        <h1 class="text-4xl font-bold text-center text-blue-800 mb-8 pb-4 border-b-2 border-blue-200">
                             Schüler Kosten &amp; Zahlungsstatus
                         </h1>
 
-                        <p className="text-gray-700 mb-6 text-center">
+                        <p class="text-gray-700 mb-6 text-center">
                             Diese Schülerliste wird in einer sicheren Cloud-Datenbank gespeichert. Jeder kann sie anzeigen. Nur der registrierte Administrator kann Änderungen vornehmen.
                             <br/>
-                            <span className="text-sm text-gray-500 mt-2 block">
+                            <span class="text-sm text-gray-500 mt-2 block">
                                 (Eintrittspreis ist 0,00 € angenommen.)
                             </span>
                         </p>
 
                         {/* Authentication Controls */}
-                        <div className="flex flex-col items-center justify-center mb-6 p-4 bg-blue-50 rounded-xl shadow-inner">
+                        <div class="flex flex-col items-center justify-center mb-6 p-4 bg-blue-50 rounded-xl shadow-inner">
                             {user ? (
-                                <div className="text-center w-full max-w-sm">
-                                    <p className="text-lg text-blue-800 font-semibold mb-2">
-                                        Angemeldet als: <span className="font-mono break-all">{user.email || user.uid}</span>
+                                <div class="text-center w-full max-w-sm">
+                                    <p class="text-lg text-blue-800 font-semibold mb-2">
+                                        Angemeldet als: <span class="font-mono break-all">{user.email || user.uid}</span>
                                     </p>
                                     {isCurrentUserAdmin && (
-                                        <p className="text-green-700 font-semibold mb-4">Sie sind der Administrator und können bearbeiten.</p>
+                                        <p class="text-green-700 font-semibold mb-4">Sie sind der Administrator und können bearbeiten.</p>
                                     )}
                                     {!isCurrentUserAdmin && (
-                                        <p className="text-orange-700 font-semibold mb-4">Sie sind angemeldet, aber nicht der Administrator. Sie können nur anzeigen.</p>
+                                        <p class="text-orange-700 font-semibold mb-4">Sie sind angemeldet, aber nicht der Administrator. Sie können nur anzeigen.</p>
                                     )}
                                     <button
                                         onClick={handleLogout}
-                                        className="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400"
+                                        class="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400"
                                     >
                                         Abmelden
                                     </button>
                                 </div>
                             ) : (
-                                <div className="w-full max-w-sm">
-                                    <h2 className="text-xl font-semibold text-blue-700 mb-4 text-center">Anmelden / Registrieren</h2>
-                                    <div className="flex flex-col gap-3 mb-4">
+                                <div class="w-full max-w-sm">
+                                    <h2 class="text-xl font-semibold text-blue-700 mb-4 text-center">Anmelden / Registrieren</h2>
+                                    <div class="flex flex-col gap-3 mb-4">
                                         <input
                                             type="email"
                                             placeholder="E-Mail"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            class="p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                                         />
                                         <input
                                             type="password"
                                             placeholder="Passwort"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            class="p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                                         />
                                     </div>
-                                    <div className="flex flex-col sm:flex-row gap-3">
+                                    <div class="flex flex-col sm:flex-row gap-3">
                                         <button
                                             onClick={handleLogin}
-                                            className="flex-grow px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            class="flex-grow px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-400"
                                         >
                                             Anmelden
                                         </button>
                                         <button
                                             onClick={handleRegister}
-                                            className="flex-grow px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400"
+                                            class="flex-grow px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400"
                                         >
                                             Registrieren
                                         </button>
                                     </div>
                                     {authError && (
-                                        <p className="text-red-600 text-sm mt-2 text-center">{authError}</p>
+                                        <p class="text-red-600 text-sm mt-2 text-center">{authError}</p>
                                     )}
                                 </div>
                             )}
                         </div>
 
-                        <div className="space-y-4">
+                        <div class="space-y-4">
                             {students.map(student => (
                                 <StudentItem
                                     key={student.id}
@@ -643,7 +644,7 @@
                             ))}
                         </div>
 
-                        <div className="mt-10 pt-6 border-t-2 border-blue-200 text-center text-gray-600 text-sm">
+                        <div class="mt-10 pt-6 border-t-2 border-blue-200 text-center text-gray-600 text-sm">
                             <p>&copy; 2024 Schülerliste. Alle Rechte vorbehalten.</p>
                         </div>
                     </div>
