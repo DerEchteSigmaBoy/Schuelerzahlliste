@@ -297,22 +297,22 @@
                     if (docSnap.exists() && docSnap.data().adminUid) {
                         setAdminUid(docSnap.data().adminUid);
                         console.log("Admin UID gesetzt:", docSnap.data().adminUid);
-                    } else if (user && !adminUid) { // Only attempt to set admin if a user is logged in AND no admin is currently set
-                        console.log("AdminConfig existiert nicht oder Admin UID fehlt. Versuche, aktuellen Benutzer (" + user.uid + ") als Admin zu setzen.");
+                    } else if (user && !docSnap.exists()) { // CRITICAL CHANGE: Only if document DOES NOT exist
+                        console.log("AdminConfig Dokument existiert noch nicht. Versuche, aktuellen Benutzer (" + user.uid + ") als Admin zu setzen.");
                         try {
                             await setDoc(adminConfigDocRef, { adminUid: user.uid });
-                            setAdminUid(user.uid);
+                            setAdminUid(user.uid); // Update local state immediately after successful write
                             console.log("Aktueller Benutzer (" + user.uid + ") als Admin UID in Firestore geschrieben.");
                         } catch (e) {
                             console.error("Fehler beim Setzen der Administrator-UID in Firestore:", e);
-                            setAuthError("Konnte Administrator-Rechte nicht zuweisen. Möglicherweise fehlen Schreibrechte oder Regeln.");
+                            setAuthError("Konnte Administrator-Rechte nicht zuweisen. Möglicherweise fehlen Schreibrechte oder Regeln: " + e.message);
                         }
                     } else {
-                        console.log("AdminConfig leer oder kein angemeldeter Benutzer, um Admin zu setzen.");
+                        console.log("AdminConfig: Dokument existiert bereits oder kein Benutzer angemeldet. Kein Versuch, Admin zu setzen.");
                     }
                     // Do NOT set loading false here, as student list fetch is still pending.
                 }, (error) => {
-                    console.error("Fehler beim Abrufen der Administrator-Konfiguration:", error);
+                    console.error("Fehler beim Abrufen der Administrator-Konfiguration (onSnapshot):", error);
                     setAuthError("Fehler beim Laden der Administrator-Informationen: " + error.message); // Added error.message
                     // Still don't set loading false here, as student list fetch might succeed independently.
                 });
@@ -372,38 +372,7 @@
                 };
             }, [db, user, adminUid, appId, collection, doc, onSnapshot, setDoc]); // Added setDoc to dependencies
 
-            // 3. Save Student Data to Firestore (debounced)
-            React.useEffect(() => {
-                console.log("useEffect [students, db, user, adminUid, loading, appId] triggered for saving.");
-                console.log("Current state for saving: db:", !!db, "user:", !!user, "adminUid:", adminUid, "loading:", loading);
-
-                // Only save if DB is available, user is authenticated, the current user is the admin, and not in initial loading phase
-                // Also, ensure students array is not empty before saving (to prevent saving an empty array on first render)
-                if (!db || !user || user.uid !== adminUid || loading || students.length === 0 || !collection || !doc || !setDoc) { // Add checks for collection, doc, setDoc
-                    if (students.length === 0 && !loading) {
-                        console.log("Warnung: Studentenliste ist leer und nicht mehr am Laden. Speichern übersprungen.");
-                    } else if (!setDoc) {
-                        console.error("Fehler: 'setDoc' Funktion ist nicht verfügbar (beim Speichern).");
-                    }
-                    return;
-                }
-
-                const saveStudentData = async () => {
-                    console.log("Versuche Schülerdaten in Firestore zu speichern...");
-                    // MODULAR SYNTAX: collection() and doc() functions
-                    const studentListDocRef = doc(collection(db, 'artifacts', appId, 'public'), 'studentList');
-                    try {
-                        await setDoc(studentListDocRef, { students: students });
-                        console.log("Schülerdaten in Firestore gespeichert.");
-                    } catch (error) {
-                        console.error("Fehler beim Speichern der Schülerdaten in Firestore:", error);
-                        setAuthError("Fehler beim Speichern der Daten. Prüfen Sie Ihre Internetverbindung oder Firebase-Regeln.");
-                    }
-                };
-
-                const timeoutId = setTimeout(saveStudentData, 500); // Debounce saves
-                return () => clearTimeout(timeoutId); // Cleanup timeout
-            }, [students, db, user, adminUid, loading, appId, collection, doc, setDoc]); // Add collection, doc, setDoc to dependencies
+            // Removed the separate useEffect for saving, as it's now handled directly in togglePaidStatus
 
 
             /**
@@ -413,19 +382,26 @@
              */
             const handleRegister = async () => {
                 setAuthError(''); // Clear previous errors
-                if (!email || !password) {
+                const trimmedEmail = email.trim();
+                const trimmedPassword = password.trim();
+
+                if (!trimmedEmail || !trimmedPassword) {
                     setAuthError("E-Mail und Passwort dürfen nicht leer sein.");
                     return;
                 }
+                // Basic email format validation
+                if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
+                    setAuthError("Ungültiges E-Mail-Format. Bitte geben Sie eine gültige E-Mail-Adresse ein.");
+                    return;
+                }
+
                 if (!createUserWithEmailAndPassword) {
                     setAuthError("Registrierungsfunktion nicht verfügbar. App ist nicht korrekt initialisiert.");
                     return;
                 }
                 try {
                     console.log("Versuche, Benutzer zu registrieren...");
-                    await createUserWithEmailAndPassword(auth, email, password);
-                    // alert("Registrierung erfolgreich! Sie wurden angemeldet. Wenn Sie der erste Registrierte sind, sind Sie jetzt der Administrator.");
-                    // Custom message box instead of alert()
+                    await createUserWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
                     const messageBox = document.createElement('div');
                     messageBox.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
                     messageBox.innerHTML = `
@@ -453,19 +429,26 @@
              */
             const handleLogin = async () => {
                 setAuthError(''); // Clear previous errors
-                if (!email || !password) {
+                const trimmedEmail = email.trim();
+                const trimmedPassword = password.trim();
+
+                if (!trimmedEmail || !trimmedPassword) {
                     setAuthError("E-Mail und Passwort dürfen nicht leer sein.");
                     return;
                 }
+                // Basic email format validation
+                if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
+                    setAuthError("Ungültiges E-Mail-Format. Bitte geben Sie eine gültige E-Mail-Adresse ein.");
+                    return;
+                }
+
                 if (!signInWithEmailAndPassword) {
                     setAuthError("Anmeldefunktion nicht verfügbar. App ist nicht korrekt initialisiert.");
                     return;
                 }
                 try {
                     console.log("Versuche, Benutzer anzumelden...");
-                    await signInWithEmailAndPassword(auth, email, password);
-                    // alert("Anmeldung erfolgreich!");
-                    // Custom message box instead of alert()
+                    await signInWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
                     const messageBox = document.createElement('div');
                     messageBox.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
                     messageBox.innerHTML = `
@@ -498,8 +481,6 @@
                     console.log("Versuche, Benutzer abzumelden...");
                     await signOut(auth);
                     setAdminUid(null); // Reset admin status on logout
-                    // alert("Erfolgreich abgemeldet.");
-                    // Custom message box instead of alert()
                     const messageBox = document.createElement('div');
                     messageBox.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
                     messageBox.innerHTML = `
@@ -520,16 +501,36 @@
              * Toggles the payment status of a student.
              * @param {number} studentId - The ID of the student whose status is to be changed.
              */
-            const togglePaidStatus = (studentId) => {
-                setStudents(prevStudents => {
-                    const updatedStudents = prevStudents.map(student =>
-                        student.id === studentId
-                            ? { ...student, hasPaid: !student.hasPaid }
-                            : student
-                    );
-                    console.log("Zahlungsstatus geändert. Neue Schülerliste:", updatedStudents);
-                    return updatedStudents;
-                });
+            const togglePaidStatus = async (studentId) => { // Make function async
+                // First, update the local state optimistically
+                const updatedStudents = students.map(student =>
+                    student.id === studentId
+                        ? { ...student, hasPaid: !student.hasPaid }
+                        : student
+                );
+                setStudents(updatedStudents);
+                console.log("Zahlungsstatus lokal geändert. Neue Schülerliste:", updatedStudents);
+
+                // Now, attempt to save to Firestore ONLY if the current user is an admin
+                // Check if Firestore functions and instances are available before attempting save
+                if (db && collection && doc && setDoc && user && user.uid === adminUid) { 
+                    console.log("Versuche Schülerdaten in Firestore zu speichern (direkt von togglePaidStatus)...");
+                    const studentListDocRef = doc(collection(db, 'artifacts', appId, 'public'), 'studentList');
+                    try {
+                        await setDoc(studentListDocRef, { students: updatedStudents }); // Save the updated list
+                        console.log("Schülerdaten in Firestore gespeichert.");
+                    } catch (error) {
+                        console.error("Fehler beim Speichern der Schülerdaten in Firestore (von togglePaidStatus):", error);
+                        setAuthError("Fehler beim Speichern der Daten. Prüfen Sie Ihre Internetverbindung oder Firebase-Regeln: " + error.message);
+                        // OPTIONAL: Revert local state if save fails, but optimistic UI is often preferred.
+                        // setStudents(students); // Revert to previous state
+                    }
+                } else {
+                    console.log("Nicht-Administrator versucht, Daten zu ändern oder Firebase-Dienste nicht bereit. Speichern übersprungen.");
+                    if (user && user.uid !== adminUid) {
+                        setAuthError("Sie sind kein Administrator und können die Daten nicht speichern.");
+                    }
+                }
             };
 
             const isCurrentUserAdmin = user && adminUid && user.uid === adminUid;
