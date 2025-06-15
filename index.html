@@ -121,30 +121,30 @@
     </script>
 
     <script type="text/babel">
-        // Initial student data (same as before)
+        // Updated initial student data based on the provided image
         const initialStudentData = [
-            { id: 1, name: "Antonitsch Jakob", activities: ["nein", "ja", "nein", "nein", "5"] },
-            { id: 2, name: "Brunner Annalena", activities: ["nein", "nein", "nein", "nein", "5"] },
-            { id: 3, name: "Brunner Gabriel", activities: ["ja", "ja", "ja", "nein", "5"] },
-            { id: 4, name: "Dreier Adrian", activities: ["ja", "ja", "ja", "nein", "5"] },
-            { id: 5, name: "Dunkl Theo", activities: ["nein", "ja", "nein", "nein", "5"] },
-            { id: 6, name: "Goller Philipp", activities: ["ja", "ja", "ja", "nein", "5"] },
-            { id: 7, name: "Granig Mario", activities: ["nein", "ja", "nein", "nein", "5"] },
-            { id: 8, name: "Kecler Fabian", activities: ["ja", "ja", "ja", "nein", "5"] },
-            { id: 9, name: "Kogler Simon", activities: ["ja", "ja", "ja", "nein", "5"] },
-            { id: 10, name: "Kraner Jakob", activities: ["nein", "ja", "nein", "nein", "5"] },
-            { id: 11, name: "Meissnitzer Tobias", activities: ["nein", "nein", "nein", "nein", "5"] },
-            { id: 12, name: "Morina Tobias", activities: ["nein", "ja", "nein", "nein", "5"] },
-            { id: 13, "name": "Rebhan Iwen", "activities": ["ja", "ja", "ja", "nein", "5"] },
+            { id: 1, name: "Antonitsch Jakob", activities: ["nein", "ja", "nein", "ja", "5"] },
+            { id: 2, name: "Brunner Annalena", activities: ["nein", "nein", "nein", "ja", "5"] },
+            { id: 3, name: "Brunner Gabriel", activities: ["ja", "ja", "ja", "ja", "5"] },
+            { id: 4, name: "Dreier Adrian", activities: ["ja", "ja", "ja", "ja", "5"] },
+            { id: 5, name: "Dunkl Theo", activities: ["nein", "ja", "nein", "ja", "5"] },
+            { id: 6, name: "Goller Philipp", activities: ["ja", "ja", "ja", "ja", "5"] },
+            { id: 7, name: "Granig Mario", activities: ["nein", "ja", "nein", "ja", "5"] },
+            { id: 8, name: "Kecler Fabian", activities: ["ja", "ja", "ja", "ja", "5"] },
+            { id: 9, name: "Kogler Simon", activities: ["nein", "ja", "ja", "ja", "5"] },
+            { id: 10, name: "Kraner Jakob", activities: ["nein", "ja", "nein", "ja", "5"] },
+            { id: 11, name: "Meissnitzer Tobias", activities: ["nein", "nein", "ja", "ja", "5"] },
+            { id: 12, name: "Morina Tobias", activities: ["nein", "ja", "nein", "ja", "5"] },
+            { id: 13, name: "Rebhan Iwen", activities: ["ja", "ja", "ja", "ja", "5"] },
             { id: 14, name: "Seebacher Alena", activities: ["nein", "nein", "nein", "nein", "0"] },
-            { id: 15, name: "Steiner Elias", activities: ["ja", "ja", "ja", "nein", "5"] },
-            { id: 16, name: "Stirling Elias", activities: ["nein", "nein", "ja", "nein", "5"] },
-            { id: 17, name: "Tautschnig Yannick", activities: ["nein", "ja", "nein", "nein", "5"] },
-            { id: 18, name: "Terkl Marco", activities: ["nein", "ja", "nein", "nein", "5"] },
-            { id: 19, name: "Walder Sandro", activities: ["nein", "ja", "nein", "nein", "5"] },
-            { id: 20, name: "Wirth Sebastian", activities: ["nein", "ja", "nein", "nein", "5"] },
-            { id: 21, name: "Zeber Marcel", activities: ["nein", "nein", "nein", "nein", "5"] },
-            { id: 22, name: "Zivkovic Ana", activities: ["nein", "ja", "nein", "nein", "5"] },
+            { id: 15, name: "Steiner Elias", activities: ["ja", "ja", "ja", "ja", "5"] },
+            { id: 16, name: "Stirling Elias", activities: ["nein", "nein", "ja", "ja", "5"] },
+            { id: 17, name: "Tautschnig Yannick", activities: ["nein", "ja", "nein", "ja", "5"] },
+            { id: 18, name: "Terkl Marco", activities: ["nein", "ja", "nein", "ja", "5"] },
+            { id: 19, name: "Walder Sandro", activities: ["nein", "ja", "nein", "ja", "5"] },
+            { id: 20, name: "Wirth Sebastian", activities: ["nein", "ja", "nein", "ja", "5"] },
+            { id: 21, name: "Zeber Marcel", activities: ["nein", "nein", "nein", "ja", "5"] },
+            { id: 22, name: "Zivkovic Ana", activities: ["nein", "ja", "nein", "ja", "5"] },
         ];
 
         // Prices for activities from the image
@@ -152,7 +152,7 @@
             busticket1: 8.30,
             bogenschießen: 21.80,
             busticket2: 8.70,
-            eintritt: 0.00,
+            eintritt: 3.80, // Updated from 0.00 to 3.80 based on the new list
             kinokarte: 5.00,
         };
 
@@ -173,9 +173,10 @@
             if (activities[2] && activities[2].toLowerCase() === "ja") {
                 totalCost += prices.busticket2;
             }
-            if (activities[3] && activities[3].toLowerCase() === "ja") {
+            if (activities[3] && activities[3].toLowerCase() === "ja") { // This now corresponds to the 3.80 "eintritt"
                 totalCost += prices.eintritt;
             }
+            // kinokarte activity can be "ja" or a number like "5" or "0"
             if (activities[4] && (activities[4].toLowerCase() === "ja" || parseFloat(activities[4]) === 5)) {
                 totalCost += prices.kinokarte;
             } else if (activities[4] && parseFloat(activities[4]) === 0) {
@@ -290,6 +291,7 @@
                 // --- Admin Config Listener ---
                 // MODULAR SYNTAX: collection() and doc() functions
                 const adminConfigDocRef = doc(collection(db, 'artifacts', appId, 'public'), 'adminConfig');
+                console.log("AdminConfig Doc Ref Path:", adminConfigDocRef.path); // Log the constructed path
                 const unsubscribeAdminConfig = onSnapshot(adminConfigDocRef, async (docSnap) => { // Use onSnapshot directly
                     console.log("AdminConfig snapshot received. exists:", docSnap.exists(), "data:", docSnap.data());
                     if (docSnap.exists() && docSnap.data().adminUid) {
@@ -311,14 +313,14 @@
                     // Do NOT set loading false here, as student list fetch is still pending.
                 }, (error) => {
                     console.error("Fehler beim Abrufen der Administrator-Konfiguration:", error);
-                    setAuthError("Fehler beim Laden der Administrator-Informationen.");
+                    setAuthError("Fehler beim Laden der Administrator-Informationen: " + error.message); // Added error.message
                     // Still don't set loading false here, as student list fetch might succeed independently.
                 });
 
                 // --- Student List Listener ---
                 // MODULAR SYNTAX: collection() and doc() functions
-                // Changed path to 'studentList' document directly under 'public' collection
                 const studentListDocRef = doc(collection(db, 'artifacts', appId, 'public'), 'studentList');
+                console.log("StudentList Doc Ref Path:", studentListDocRef.path); // Log the constructed path
                 const unsubscribeStudentList = onSnapshot(studentListDocRef, (docSnap) => { // Use onSnapshot directly
                     console.log("StudentList snapshot received. exists:", docSnap.exists(), "data:", docSnap.data());
                     if (docSnap.exists() && docSnap.data().students) {
@@ -357,7 +359,7 @@
                     console.log("Loading state set to false.");
                 }, (error) => {
                     console.error("Fehler beim Abrufen der Schülerliste:", error);
-                    setAuthError("Fehler beim Laden der Schülerdaten aus der Datenbank.");
+                    setAuthError("Fehler beim Laden der Schülerdaten aus der Datenbank: " + error.message); // Added error.message
                     setLoading(false); // Stop loading on error
                     console.log("Loading state set to false due to error.");
                 });
@@ -539,6 +541,20 @@
                     </div>
                 );
             }
+
+            // Display error message on UI if authError is present
+            if (authError && !loading) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4 sm:p-6 lg:p-8 font-inter">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl border border-red-300 text-center max-w-lg">
+                            <p className="text-2xl font-bold text-red-700 mb-4">Fehler bei der App-Initialisierung!</p>
+                            <p className="text-lg text-red-600">{authError}</p>
+                            <p className="text-sm text-gray-500 mt-4">Bitte überprüfen Sie Ihre Firebase-Konfiguration, Internetverbindung und Firestore-Sicherheitsregeln.</p>
+                        </div>
+                    </div>
+                );
+            }
+
 
             return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 lg:p-8 font-inter">
